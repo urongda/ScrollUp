@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>滚动高亮文本演示器</title>
+  <style>
+    html, body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      background: #181818;
+      color: #eee;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', 'Noto Sans SC', Arial, sans-serif;
+      overflow: hidden;
+      width: 100vw;
+      height: 100vh;
+    }
+    #container {
+      position: absolute;
+      left: 0; right: 0; top: 0; bottom: 0;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      background: rgba(24,24,24,0.97);
+    }
+    .line {
+      opacity: 0.25;
+      transition: opacity 0.3s, color 0.3s, font-size 0.3s;
+      font-size: clamp(1.2em, 4vw, 2.2em);
+      line-height: 1.5em;
+      width: 100vw;
+      text-align: center;
+      color: #b0b0b0;
+      font-family: inherit;
+      letter-spacing: 0.02em;
+      user-select: none;
+      white-space: nowrap;
+    }
+    .highlight {
+      opacity: 1;
+      color: #fff;
+      background: #333;
+      /* font-weight: bold; */
+      font-size: clamp(2.4em, 8vw, 4.4em);
+      box-shadow: 0 0 18px #fff3;
+      letter-spacing: 0.04em;
+      font-family: inherit;
+      white-space: nowrap;
+    }
+    #hint {
+      position: absolute;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      color: #fff;
+      background: #222a;
+      padding: 0.5em 1.5em;
+      border-radius: 1em;
+      font-size: 1.2em;
+      z-index: 10;
+      font-family: inherit;
+      pointer-events: none;
+      opacity: 0.85;
+    }
+  </style>
+</head>
+<body>
+  <div id="hint">按 <b>空格键</b> 开始滚动，按住暂停，松开继续</div>
+  <div id="container"></div>
+  <script>
+    const container = document.getElementById('container');
+    const hint = document.getElementById('hint');
+    let lines = [];
+    let startIdx = 0;
+    let visibleLines = 0;
+    let scrollInterval = null;
+    let autoplay = false;
+    let scrolledCount = 0; // Track how many times we've scrolled
+    let paused = false;
+
+    function render() {
+      container.innerHTML = '';
+      for (let i = 0; i < visibleLines; i++) {
+        let idx = (startIdx + i) % lines.length;
+        const div = document.createElement('div');
+        div.className = 'line';
+        div.textContent = lines[idx];
+        if (i === Math.floor(visibleLines / 2)) {
+          div.classList.add('highlight');
+        }
+        container.appendChild(div);
+      }
+    }
+
+    function startScroll() {
+      if (scrollInterval) clearInterval(scrollInterval);
+      scrolledCount = 0;
+      scrollInterval = setInterval(() => {
+        if (paused) return;
+        startIdx = (startIdx + 1) % lines.length;
+        scrolledCount++;
+        render();
+        // Stop after every line has been highlighted in the middle once
+        if (scrolledCount >= lines.length) {
+          clearInterval(scrollInterval);
+        }
+      }, 500); // Adjust speed here
+    }
+
+    function setupVisibleLines() {
+      // Calculate how many lines fit in the full screen
+      const lineHeight = 1.5 * parseFloat(getComputedStyle(document.documentElement).fontSize) * 2.2; // 2.2em base
+      visibleLines = Math.floor(window.innerHeight / lineHeight);
+    }
+
+    function loadDefaultFile() {
+      fetch('list.txt')
+        .then(response => response.text())
+        .then(text => {
+          lines = text.split(/\r?\n/);
+          setupVisibleLines();
+          // Start from the middle line, showing the bottom half
+          startIdx = Math.floor(lines.length / 2) - Math.floor(visibleLines / 2);
+          if (startIdx < 0) startIdx = 0;
+          render();
+        });
+    }
+
+    window.addEventListener('resize', () => {
+      if (!lines.length) return;
+      setupVisibleLines();
+      render();
+    });
+
+    // Spacebar: start, pause on keydown, resume on keyup
+    document.addEventListener('keydown', (e) => {
+      if (e.code === 'Space') {
+        if (!autoplay) {
+          autoplay = true;
+          hint.style.display = 'none';
+          startScroll();
+        } else {
+          paused = true;
+        }
+        e.preventDefault();
+      }
+    });
+    document.addEventListener('keyup', (e) => {
+      if (e.code === 'Space') {
+        paused = false;
+        e.preventDefault();
+      }
+    });
+
+    // Auto-load default file
+    loadDefaultFile();
+  </script>
+</body>
+</html> 
