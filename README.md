@@ -14,12 +14,12 @@
    ```bash
    git clone https://github.com/urongda/ScrollUp.git
    ```
-2. 进入项目目录，直接用浏览器打开 `scrollup.html` 即可。
+2. 进入项目目录，直接用浏览器打开 `index.html` 即可。
 3. 默认会加载 `list.txt` 文件。
 4. 按空格键开始滚动，再次按住空格键可暂停，松开继续。
 
 ## 文件说明
-- `scrollup.html`：主网页文件
+- `index.html`：主网页文件
 - `list.txt`：默认文本内容（可替换为你自己的文本）
 
 ## 适用场景
